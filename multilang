@@ -1,0 +1,463 @@
+// ==============================================================================
+
+using System;
+using System.IO;
+using System.Diagnostics;
+using System.Windows.Forms;
+using Microsoft.Win32;
+using System.Collections.Generic;
+using System.Reflection;
+
+[assembly: AssemblyTitle("TERA Europe Classic+ Launcher Optimized")]
+[assembly: AssemblyDescription("Official Game Client Language Launcher Patch")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("Moser Modding Games")]
+[assembly: AssemblyProduct("TERA Europe Classic+ Tools")]
+[assembly: AssemblyCopyright("Copyright © 2026 Moser83. All Rights Reserved.")]
+[assembly: AssemblyTrademark("TERA Bluehole")]
+[assembly: AssemblyCulture("")]
+[assembly: AssemblyVersion("0.0.2.0")]
+[assembly: AssemblyFileVersion("0.0.2.0")]
+
+//parte 2
+namespace TeraMultilangPatch
+{
+    class Program
+    {
+        static string RegKeyPath = @"Software\TeraClassicPatchMoser";
+        static string NombreLauncher = "TERA Europe Classic+ Launcher.exe";
+        static string AccesoDirectoNombre = ""; // Se genera dinámicamente según el idioma
+
+        
+        static List<string> IdiomasDisponibles = new List<string> {
+            "Español", "Français (Francés)", "Deutsch (Alemán)", "Polski (Polaco)", "Русский (Ruso)", "Português (Brasil)", "Svenska (Sueco)"
+        };
+
+        
+        struct Textos
+        {
+            public string Titulo, Privilegios, Bienvenida, Paso1_Msg, Paso1_Tit, Paso1_Desc, Err_Valid,
+                          Paso2_Msg, Paso2_Tit, Err_Launch, Lnk_Desc, Lnk_Exito, Menu_YaInst, Des_Exito,
+                          Err_NoLaunch, Espera_Lnch, Err_Disco, Exito_Final, No_Cambios;
+        }
+
+        static Dictionary<string, Textos> Diccionario = new Dictionary<string, Textos>();
+        
+        
+        static Dictionary<string, string> MapeoArchivos = new Dictionary<string, string> {
+            { "Español", "DataCenter_Final_SPA.dat" },
+            { "Français (Francés)", "DataCenter_Final_FRA.dat" },
+            { "Deutsch (Alemán)", "DataCenter_Final_GER.dat" },
+            { "Polski (Polaco)", "DataCenter_Final_POL.dat" },
+            { "Русский (Ruso)", "DataCenter_Final_RUS.dat" },
+            { "Português (Brasil)", "DataCenter_Final_BRA.dat" },
+            { "Svenska (Sueco)", "DataCenter_Final_SE.dat" }
+        };
+
+//parte 3        
+        static void InicializarDiccionario()
+        {
+            Diccionario.Add("Español", new Textos {
+                Titulo = "TERA Europe Classic+ Parche Idiomas v2 [Creado por Moser83]",
+                Privilegios = "Este parche necesita ejecutarse como Administrador para poder modificar los archivos del juego y gestionar el sistema.",
+                Bienvenida = "¡Bienvenido al asistente del Parche Multilenguaje de TERA Europe Classic+!\n\nA continuación configuraremos las rutas de tu juego y crearemos un acceso directo permanente en tu Escritorio.",
+                Paso1_Msg = "PASO 1 de 2:\n\nPor favor, selecciona la carpeta principal donde tienes instalado tu juego TERA (la carpeta raiz).",
+                Paso1_Tit = "Paso 1 - Carpeta del Juego",
+                Paso1_Desc = "Selecciona la carpeta principal de tu TERA Europe Classic+",
+                Err_Valid = "La carpeta seleccionada no parece contener una instalación válida de TERA (No se encontró la ruta). El proceso se detendrá.",
+                Paso2_Msg = "PASO 2 de 2:\n\nA continuación, selecciona el archivo ejecutable del Launcher Oficial de tu servidor ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Paso 2 - Archivo del Launcher",
+                Err_Launch = "El archivo seleccionado no coincide con 'TERA Europe Classic+ Launcher.exe'. El proceso se detendrá.",
+                Lnk_Desc = "Lanzador de TERA Europe Classic+ optimizado con traducción por Moser83",
+                Lnk_Exito = "¡Instalación y configuración completadas con éxito!\n\nSe ha creado el acceso directo permanente 'TERA Europe Classic+ Español' en tu Escritorio.\nA partir de ahora, ejecuta tu juego siempre desde ahí.",
+                Menu_YaInst = "El parche ya se encuentra configurado e instalado en este equipo.\n\n¿Qué deseas hacer?\n\n[SÍ] -> Continuar y lanzar el juego con el idioma traducido.\n[NO] -> Desinstalar el parche por completo y restaurar archivos originales.\n[Cancelar] -> Salir sin realizar cambios.",
+                Des_Exito = "El parche se ha desinstalado correctamente.\nSe han restaurado tus archivos originales en Inglés y se ha eliminado el acceso directo.",
+                Err_NoLaunch = "No se pudo localizar el Launcher Oficial en la ruta previamente guardada. Por favor, ejecuta el instalador original para reconfigurar.",
+                Espera_Lnch = "Esperando a que el launcher oficial inicie y termine la verificación de archivos.\n\nHaz clic en ACEPTAR *SOLO* cuando la barra de comprobación del Launcher haya finalizado por completo y el juego esté listo para arrancar.",
+                Err_Disco = "Error Crítico: No se pudieron sobrescribir los archivos del idioma.\n\nEs probable que el Launcher oficial mantenga los archivos abiertos. Espera a que termine la carga antes de pulsar Aceptar.",
+                Exito_Final = "¡Traducción al Español aplicada correctamente!\n\n¡Disfruta de tu aventura en TERA Europe Classic+!\n\nNO CAMBIES EL IDIOMA DEL LAUNCHER OFICIAL DEJALO EN INGLES, YA PUEDES DARLE A LAUNCH, DISFRUTA !",
+                No_Cambios = "No se requerían modificaciones adicionales o el juego ya se encuentra parcheado bajo esta sesión."
+            });
+
+            Diccionario.Add("Français (Francés)", new Textos {
+                Titulo = "TERA Europe Classic+ Patch Langues v2 [Créé par Moser83]",
+                Privilegios = "Ce patch doit être exécuté en tant qu'Administrateur pour modifier les fichiers du jeu et gérer le système.",
+                Bienvenida = "Bienvenue dans l'assistant du Patch Multilingue de TERA Europe Classic+!\n\nNous allons configurer les chemins de votre jeu et créer un raccourci permanent sur votre Bureau.",
+                Paso1_Msg = "ÉTAPE 1 sur 2:\n\nVeuillez sélectionner le dossier principal où votre jeu TERA est installé (le dossier racine).",
+                Paso1_Tit = "Étape 1 - Dossier du Jeu",
+                Paso1_Desc = "Sélectionnez le dossier principal de votre TERA Europe Classic+",
+                Err_Valid = "Le dossier sélectionné ne semble pas contenir une installation valide de TERA (Le chemin n'a pas été trouvé). Le processus va s'arrêter.",
+                Paso2_Msg = "ÉTAPE 2 sur 2:\n\nEnsuite, sélectionnez le fichier exécutable du Launcher Officiel de votre serveur ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Étape 2 - Fichier du Launcher",
+                Err_Launch = "Le fichier sélectionné ne correspond pas à 'TERA Europe Classic+ Launcher.exe'. Le processus va s'arrêter.",
+                Lnk_Desc = "Lanceur TERA Europe Classic+ optimisé avec traduction par Moser83",
+                Lnk_Exito = "Installation et configuration réussies !\n\nLe raccourci permanent a été créé sur votre Bureau.\nA partir de maintenant, lancez toujours le jeu depuis ce raccourci.",
+                Menu_YaInst = "Le patch est déjà configuré et installé sur cet ordinateur.\n\nQue voulez-vous faire ?\n\n[OUI] -> Continuer et lancer le jeu traduit.\n[NON] -> Désinstaller complètement le patch et restaurer les fichiers originaux.\n[Annuler] -> Quitter sans modifications.",
+                Des_Exito = "Le patch a été désinstallé avec succès.\nVos fichiers originaux en anglais ont été restaurés et le raccourci a été supprimé.",
+                Err_NoLaunch = "Impossible de localiser le Launcher Officiel dans le chemin enregistré. Veuillez exécuter l'installateur d'origine pour le reconfigurer.",
+                Espera_Lnch = "Attente du démarrage du launcher officiel et de la fin de la vérification des fichiers.\n\nCliquez sur OK *UNIQUEMENT* lorsque la barre de chargement du Launcher est totalement terminée et que le jeu est prêt à démarrer.",
+                Err_Disco = "Erreur Critique : Impossible de remplacer les fichiers de langue.\n\nIl est probable que le Launcher officiel maintienne les fichiers ouverts. Attendez la fin du chargement avant de cliquer sur OK.",
+                Exito_Final = "Traduction appliquée avec succès par Moser83 !\n\nBonne aventure dans TERA Europe Classic+ !\n\nNE CHANGEZ PAS LA LANGUE DU LANCEUR OFFICIEL, LAISSEZ-LA EN ANGLAIS !",
+                No_Cambios = "Aucune modification supplémentaire n'a été requise ou le jeu est déjà patché pour cette session."
+            });
+
+
+//parte 4            
+            Diccionario.Add("Deutsch (Alemán)", new Textos {
+                Titulo = "TERA Europe Classic+ Sprachen Patch v2 [Erstellt von Moser83]",
+                Privilegios = "Dieses Patch muss als Administrator ausgeführt werden, um Spieldateien zu ändern und das System zu verwalten.",
+                Bienvenida = "Willkommen beim Installationsassistenten des mehrsprachigen Patches für TERA Europe Classic+!\n\nWir werden nun Ihre Spielpfade konfigurieren und eine dauerhafte Verknüpfung auf Ihrem Desktop erstellen.",
+                Paso1_Msg = "SCHRITT 1 von 2:\n\nBitte wählen Sie den Hauptordner aus, in dem Ihr TERA-Spiel installiert ist (der Hauptordner).",
+                Paso1_Tit = "Schritt 1 - Spielordner",
+                Paso1_Desc = "Wählen Sie den Hauptordner von TERA Europe Classic+",
+                Err_Valid = "Der ausgewählte Ordner scheint keine gültige TERA-Installation zu enthalten (Pfad nicht gefunden). Der Vorgang wird abgebrochen.",
+                Paso2_Msg = "SCHRITT 2 von 2:\n\nWählen Sie als Nächstes die ausführbare Datei des offiziellen Launchers Ihres Servers ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Schritt 2 - Launcher-Datei",
+                Err_Launch = "Die ausgewählte Datei stimmt nicht mit 'TERA Europe Classic+ Launcher.exe' überein. Der Vorgang wird abgebrochen.",
+                Lnk_Desc = "Optimierter TERA Europe Classic+ Launcher mit Untersuchung von Moser83",
+                Lnk_Exito = "Installation und Konfiguration erfolgreich abgeschlossen!\n\nDie dauerhafte Verknüpfung wurde auf Ihrem Desktop erstellt.\nStarten Sie das Spiel ab jetzt immer von dort.",
+                Menu_YaInst = "Das Patch ist bereits auf diesem Computer konfiguriert und installiert.\n\nWas möchten Sie tun?\n\n[JA] -> Fortfahren und das übersetzte Spiel starten.\n[NEIN] -> Das Patch vollständig deinstallieren und Originaldateien wiederherstellen.\n[Abbrechen] -> Beenden ohne Änderungen.",
+                Des_Exito = "Das Patch wurde erfolgreich deinstalliert.\nIhre englischen Originaldateien wurden wiederhergestellt und die Verknüpfung wurde entfernt.",
+                Err_NoLaunch = "Der offizielle Launcher konnte im zuvor gespeicherten Pfad nicht gefunden werden. Bitte führen Sie den originalen Installer aus, um ihn neu zu konfigurieren.",
+                Espera_Lnch = "Warten auf den Start des offiziellen Launchers und den Abschluss der Dateiprüfung.\n\nKlicken Sie *NUR* auf OK, wenn der Überprüvungsbalken des Launchers vollständig abgeschlossen ist und das Spiel startbereit ist.",
+                Err_Disco = "Kritischer Fehler: Dateiberichtigungen konnten nicht überschrieben werden.\n\nEs ist wahrscheinlich, dass der Launcher die Dateien noch geöffnet hält. Warten Sie, bis der Ladevorgang abgeschlossen ist, bevor Sie auf OK klicken.",
+                Exito_Final = "Übersetzung erfolgreich von Moser83 angewendet!\n\nViel Spaß bei Ihrem Abenteuer in TERA Europe Classic+!\n\nÄNDERN SIE NICHT DIE SPRACHE DES OFFIZIELLEN LAUNCHERS !",
+                No_Cambios = "Es waren keine zusätzlichen Änderungen erforderlich oder das Spiel wurde in dieser Sitzung bereits gepatcht."
+            });
+
+            Diccionario.Add("Polski (Polaco)", new Textos {
+                Titulo = "TERA Europe Classic+ Łatka Językowa v2 [Stworzone przez Moser83]",
+                Privilegios = "Ta łatka musi być uruchomiona jako Administrator, aby móc modyfikować pliki gry i zarządzać systemem.",
+                Bienvenida = "Witamy w kreatorze instalacji łatki wielojęzycznej TERA Europe Classic+!\n\nW kilku krokach skonfigurujemy ścieżki gry i utworzymy stały skrót na Twoim Pulpicie.",
+                Paso1_Msg = "KROK 1 z 2:\n\nWybierz główny folder, w którym zainstalowana jest gra TERA (folder główny).",
+                Paso1_Tit = "Krok 1 - Folder z Grą",
+                Paso1_Desc = "Wybierz główny folder TERA Europe Classic+",
+                Err_Valid = "Wybrany folder nie zawiera poprawnej instalacji TERA (Nie znaleziono ścieżki). Proces zostanie przerwany.",
+                Paso2_Msg = "KROK 2 z 2:\n\nNastępnie wybierz plik wykonywalny Oficjalnego Launchera swojego serwera ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Krok 2 - Plik Launchera",
+                Err_Launch = "Wybrany plik nie zgadza się z 'TERA Europe Classic+ Launcher.exe'. Wybór zostanie anulowany.",
+                Lnk_Desc = "Zoptymalizowany launcher TERA Europe Classic+ z tłumaczeniem od Moser83",
+                Lnk_Exito = "Instalacja i konfiguracja zakończona sukcesem!\n\nNa Twoim Pulpicie został utworzony skrót.\nOd teraz zawsze uruchamiaj grę za jego pomocą.",
+                Menu_YaInst = "Łatka jest już skonfigurowana i zainstalowana na tym komputerze.\n\nCo chcesz zrobić?\n\n[TAK] -> Kontynuuj i uruchom grę w przetłumaczonym języku.\n[NIE] -> Całkowicie odinstaluj łatkę i przywróć oryginalne pliki.\n[Anuluj] -> Wyjdź bez wprowadzania zmian.",
+                Des_Exito = "Łatka została pomyślnie odinstalowana.\nPrzywrócono oryginalne angielskie pliki, a skrót został usunięty.",
+                Err_NoLaunch = "Nie można zlokalizować Oficjalnego Launchera w zapisanej ścieżce. Uruchom oryginalny instalator, aby skonfigurować ponownie.",
+                Espera_Lnch = "Oczekiwanie na uruchomienie oficjalnego launchera i zakończenie weryfikacji plików.\n\nKliknij OK *TYLKO* wtedy, gdy pasek sprawdzania Launchera dojdzie do samego końca, a gra będzie gotowa do uruchomienia.",
+                Err_Disco = "Błąd krytyczny: Nie można nadpisać plików językowych.\n\nPrawdopodobnie Launcher nadal używa tych plików. Poczekaj na całkowite zakończenie ładowania przed kliknięciem OK.",
+                Exito_Final = "Tłumaczenie pomyślnie nałożone przez Moser83!\n\nMilej zabawy w TERA Europe Classic+!\n\nNIE ZMIENIAJ JĘZYKA W OFICJALNYM LAUNCHERZE !",
+                No_Cambios = "Nie wymagano dodatkowych zmian lub gra została już spatchowana w tej sesji."
+            });
+
+            Diccionario.Add("Русский (Ruso)", new Textos {
+                Titulo = "TERA Europe Classic+ Патч Языков v2 [Создано Moser83]",
+                Privilegios = "Этот патч необходимо запускать от имени Администратора для изменения файлов игры и управления системой.",
+                Bienvenida = "Добро пожаловать в мастер установки мультиязычного патча TERA Europe Classic+!\n\nСейчас мы настроим пути к игре и создадим постоянный ярлык на вашем Рабочем столе.",
+                Paso1_Msg = "ШАГ 1 из 2:\n\nПожалуйста, выберите корневую папку, куда установлена ваша игра TERA (корневую папку).",
+                Paso1_Tit = "Шаг 1 - Папка с игрой",
+                Paso1_Desc = "Выберите корневую папку TERA Europe Classic+",
+                Err_Valid = "Выбранная папка не содержит корректную установку TERA (Путь не найден). Процесс будет остановлен.",
+                Paso2_Msg = "ШАГ 2 из 2:\n\nДалее выберите исполняемый файл официального лаунчера вашего сервера ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Шаг 2 - Файл лаунчера",
+                Err_Launch = "Выбранный файл не совпадает с 'TERA Europe Classic+ Launcher.exe'. Процесс будет остановлен.",
+                Lnk_Desc = "Оптимизированный лаунчер TERA Europe Classic+ с переводом от Moser83",
+                Lnk_Exito = "Установка и настройка успешно завершены!\n\nНа вашем Рабочем столе создан постоянный ярлык.\nC этого момента всегда запускайте игру через него.",
+                Menu_YaInst = "Патч уже настроен и установлен на этом компьютере.`n`nЧто вы хотите сделать?`n`n[ДА] -> Продолжить и запустить переведенную игру.`n[НЕТ] -> Полностью удалить патч и восстановить исходные файлы.`n[Отмена] -> Выйти без изменений.",
+                Des_Exito = "Патч был успешно удален.\nВаши исходные файлы на английском языке восстановлены, а ярлык удален.",
+                Err_NoLaunch = "Не удалось найти официальный лаунчер по ранее сохраненному пути. Пожалуйста, запустите оригинальный установщик для перенастройки.",
+                Espera_Lnch = "Ожидание запуска официального лаунчера и завершения проверки файлов.`n`nНажмите ОК *ТОЛЬКО* тогда, когда полоса проверки лаунчера полностью дойдет до конца и игра будет готова к запуску.",
+                Err_Disco = "Критическая ошибка: Не удалось перезаписать файлы локализации.`n`nВозможно, лаунчер держит файлы открытыми. Дождитесь полной загрузки перед нажатием кнопки ОК.",
+                Exito_Final = "Перевод успешно применен пользователем Moser83!\n\nПриятной игры в TERA Europe Classic+!\n\nНЕ МЕНЯЙТЕ ЯЗЫК В ОФИЦИАЛЬНОМ ЛАУНЧЕРЕ !",
+                No_Cambios = "Дополнительных изменений не потребовалось или игра уже пропатчена в этой сессии."
+            });
+
+//parte 5            
+            Diccionario.Add("Português (Brasil)", new Textos {
+                Titulo = "TERA Europe Classic+ Patch Idiomas v2 [Criado por Moser83]",
+                Privilegios = "Este patch precisa ser executado como Administrador para modificar os arquivos do jogo e gerenciar o sistema.",
+                Bienvenida = "Bem-vindo ao assistente do Patch Multi-idioma do TERA Europe Classic+!\n\nAgora vamos configurar os caminhos do seu jogo e criar um atalho permanente na sua Área de Trabalho.",
+                Paso1_Msg = "PASSO 1 de 2:\n\nPor favor, selecione a pasta principal onde o seu jogo TERA está instalado (a pasta raiz).",
+                Paso1_Tit = "Passo 1 - Pasta do Jogo",
+                Paso1_Desc = "Selecione a pasta principal do seu TERA Europe Classic+",
+                Err_Valid = "A pasta selecionada não parece conter uma instalação válida do TERA (O caminho não foi encontrado). O processo será encerrado.",
+                Paso2_Msg = "PASSO 2 de 2:\n\nA seguir, selecione o arquivo executável do Launcher Oficial do seu servidor ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Passo 2 - Arquivo do Launcher",
+                Err_Launch = "O arquivo executável selecionado não coincide com 'TERA Europe Classic+ Launcher.exe'. O processo será encerrado.",
+                Lnk_Desc = "Lançador do TERA Europe Classic+ otimizado com tradução por Moser83",
+                Lnk_Exito = "Instalação e configuração concluídas com sucesso!\n\nO atalho permanente foi criado na sua Área de Trabalho.\nA partir de agora, execute o jogo sempre por ele.",
+                Menu_YaInst = "O patch já está configurado e instalado neste computador.\n\nO que você deseja fazer?\n\n[SIM] -> Continuar e iniciar o jogo traduzido.\n[NÃO] -> Desinstalar o patch completamente e restaurar os arquivos originais.\n[Cancelar] -> Sair sem fazer alterações.",
+                Des_Exito = "O patch foi desinstalado com sucesso.\nSeus arquivos originais em inglês foram restaurados e o atalho foi removido.",
+                Err_NoLaunch = "Não foi possível localizar o Launcher Oficial no caminho livro anteriormente. Por favor, execute o instalador original para reconfigurar.",
+                Espera_Lnch = "Aguardando o launcher oficial iniciar e terminar a verificação dos arquivos.\n\nClique em OK *APENAS* quando a barra de carregamento do Launcher estiver totalmente concluída e o jogo estiver pronto para iniciar.",
+                Err_Disco = "Erro Crítico: Não foi possível substituir os arquivos de idioma.\n\nÉ provável que o Launcher oficial mantema os arquivos abertos. Espere o carregamento terminar antes de clicar em OK.",
+                Exito_Final = "Tradução aplicada com sucesso por Moser83!\n\nAproveite sua aventura no TERA Europe Classic+!\n\nNÃO MUDE O IDIOMA NO LAUNCHER OFICIAL !",
+                No_Cambios = "Nenhuma modificação adicional foi necessária ou o jogo já está patcheado nesta sessão."
+            });
+
+            Diccionario.Add("Svenska (Sueco)", new Textos {
+                Titulo = "TERA Europe Classic+ Språk Patch v2 [Skapad av Moser83]",
+                Privilegios = "Denna patch måste köras som administratör för och kunna ändra spelfiler.",
+                Bienvenida = "Välkommen till TERA Europe Classic+ installationsguide!\n\nWi kommer nu konfigurera spelvägarna och skapa en genväg på skrivbordet.",
+                Paso1_Msg = "STEG 1 av 2:\n\nVänligen välj huvudmappen där spelet är installerat (huvudmappen).",
+                Paso1_Tit = "Steg 1 - Spelmapp",
+                Paso1_Desc = "Välj huvudmappen för TERA Europe Classic+",
+                Err_Valid = "Den valda mappen verkar inte innehålla en giltig installation (Vägen hittades inte).",
+                Paso2_Msg = "STEG 2 av 2:\n\nVälj den exekverbara filen för den officiella launchern ('TERA Europe Classic+ Launcher.exe').",
+                Paso2_Tit = "Steg 2 - Launcher-fil",
+                Err_Launch = "Den valda filen stämmer inte överens med 'TERA Europe Classic+ Launcher.exe'.",
+                Lnk_Desc = "Optimerad launcher för TERA Europe Classic+ skapad av Moser83",
+                Lnk_Exito = "Installation slutförd!\n\nGenvägen har skapats på ditt skrivbord.",
+                Menu_YaInst = "Patchen är redan konfigurerad på datorn.\n\nVad vill du göra?\n\n[JA] -> Fortsätt och starta spelet.\n[NEJ] -> Avinstallera patchen och återställ filer.\n[Avbryt] -> Avsluta.",
+                Des_Exito = "Patchen har avinstallerats.\nDina engelska originalfiler har återställts.",
+                Err_NoLaunch = "Kunde inte hitta den officiella launchern.",
+                Espera_Lnch = "Väntar på att launchern ska verifiera filer.\n\nKlicka på OK *ENDAST* när verifieringen är helt klar.",
+                Err_Disco = "Kritiskt fel: Kunde inte skriva över språkfilerna.",
+                Exito_Final = "Översättning applicerad av Moser83!\n\nHa så roligt i TERA Europe Classic+!",
+                No_Cambios = "Inga ändringar krävdes."
+            });
+        }
+
+//parte 6        
+        [STAThread]
+        static void Main(string[] args)
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            
+            if (!EsAdministrador())
+            {
+                ProcessStartInfo proc = new ProcessStartInfo();
+                proc.UseShellExecute = true;
+                proc.WorkingDirectory = Environment.CurrentDirectory;
+                proc.FileName = Application.ExecutablePath;
+                if (args.Length > 0) proc.Arguments = string.Join(" ", args);
+                proc.Verb = "runas";
+                try { Process.Start(proc); } catch { }
+                return;
+            }
+
+            InicializarDiccionario();
+
+            bool modoJuego = false;
+            foreach (string arg in args) { if (arg.ToLower() == "-modojuego") modoJuego = true; }
+
+            
+            List<string> todasLasRutas = new List<string>();
+
+            string idiomaSeleccionado = "Español";
+            RegistryKey keyRead = Registry.CurrentUser.OpenSubKey(RegKeyPath);
+            if (keyRead != null)
+            {
+                idiomaSeleccionado = (string)keyRead.GetValue("Idioma", "Español");
+                keyRead.Close();
+            }
+
+
+//parte 7
+            
+            if (!modoJuego && Registry.CurrentUser.OpenSubKey(RegKeyPath) == null)
+            {
+                Form formLang = new Form() {
+                    Text = "Language / Idioma", Width = 350, Height = 180,
+                    StartPosition = FormStartPosition.CenterScreen, FormBorderStyle = FormBorderStyle.FixedDialog,
+                    MaximizeBox = false, MinimizeBox = false, TopMost = true
+                };
+                Label lbl = new Label() { Text = "Select language / Selecciona tu idioma:", Left = 20, Top = 20, Width = 300 };
+                ComboBox combo = new ComboBox() { Left = 20, Top = 50, Width = 290, DropDownStyle = ComboBoxStyle.DropDownList };
+                foreach (var l in IdiomasDisponibles) combo.Items.Add(l);
+                combo.SelectedIndex = 0;
+                Button btn = new Button() { Text = "OK", Left = 120, Top = 95, Width = 100, DialogResult = DialogResult.OK };
+                formLang.Controls.AddRange(new Control[] { lbl, combo, btn });
+                formLang.AcceptButton = btn;
+
+                if (formLang.ShowDialog() == DialogResult.OK) {
+                    idiomaSeleccionado = combo.SelectedItem.ToString();
+                } else { return; }
+            }
+
+            Textos Txt = Diccionario[idiomaSeleccionado];
+            string archivoTraduccionOrigen = MapeoArchivos[idiomaSeleccionado];
+
+            
+            if (idiomaSeleccionado == "Español") AccesoDirectoNombre = "TERA Europe Classic+ Español.lnk";
+            else if (idiomaSeleccionado == "Français (Francés)") AccesoDirectoNombre = "TERA Europe Classic+ Français.lnk";
+            else if (idiomaSeleccionado == "Deutsch (Alemán)") AccesoDirectoNombre = "TERA Europe Classic+ Deutsch.lnk";
+            else if (idiomaSeleccionado == "Polski (Polaco)") AccesoDirectoNombre = "TERA Europe Classic+ Polski.lnk";
+            else if (idiomaSeleccionado == "Русский (Ruso)") AccesoDirectoNombre = "TERA Europe Classic+ Русский.lnk";
+            else if (idiomaSeleccionado == "Português (Brasil)") AccesoDirectoNombre = "TERA Europe Classic+ Português.lnk";
+            else if (idiomaSeleccionado == "Svenska (Sueco)") AccesoDirectoNombre = "TERA Europe Classic+ Svenska.lnk";
+            else AccesoDirectoNombre = "TERA Europe Classic+ Multilang.lnk";
+
+            string escritorioPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), AccesoDirectoNombre);
+
+            string rutaData = "";
+            string rutaLauncher = "";
+
+            keyRead = Registry.CurrentUser.OpenSubKey(RegKeyPath);
+            if (keyRead != null)
+            {
+                rutaData = (string)keyRead.GetValue("RutaData", "");
+                rutaLauncher = (string)keyRead.GetValue("RutaLauncher", "");
+                keyRead.Close();
+            }
+
+
+//parte8
+            
+            if (!string.IsNullOrEmpty(rutaData) && Directory.Exists(rutaData) && !modoJuego)
+            {
+                DialogResult res = MessageBox.Show(Txt.Menu_YaInst, Txt.Titulo, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                if (res == DialogResult.Cancel) return;
+                if (res == DialogResult.No)
+                {
+                    RestaurarArchivosOriginales(rutaData);
+                    Registry.CurrentUser.DeleteSubKeyTree(RegKeyPath, false);
+                    if (File.Exists(escritorioPath)) File.Delete(escritorioPath);
+                    MessageBox.Show(Txt.Des_Exito, Txt.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                    return;
+                }
+            }
+
+            
+            if (string.IsNullOrEmpty(rutaData) || string.IsNullOrEmpty(rutaLauncher) || !Directory.Exists(rutaData) || !File.Exists(rutaLauncher))
+            {
+                MessageBox.Show(Txt.Bienvenida, Txt.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                MessageBox.Show(Txt.Paso1_Msg, Txt.Paso1_Tit, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+
+                // Dueño invisible para clavar el buscador de carpetas al frente
+                Form formDueño = new Form() { TopMost = true, StartPosition = FormStartPosition.CenterScreen, Width = 0, Height = 0, FormBorderStyle = FormBorderStyle.None };
+                formDueño.Show();
+                FolderBrowserDialog fbd = new FolderBrowserDialog() { Description = Txt.Paso1_Desc };
+                if (fbd.ShowDialog(formDueño) == DialogResult.OK) {
+                    rutaData = Path.Combine(fbd.SelectedPath, "S1Game", "S1Data");
+                } else { formDueño.Close(); return; }
+                formDueño.Close();
+
+                if (!Directory.Exists(rutaData)) {
+                    MessageBox.Show(Txt.Err_Valid, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                    return;
+                }
+
+
+//parte9                
+                MessageBox.Show(Txt.Paso2_Msg, Txt.Paso2_Tit, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                
+                // Dueño invisible para clavar el buscador de archivos al frente
+                Form formDueñoL = new Form() { TopMost = true, StartPosition = FormStartPosition.CenterScreen, Width = 0, Height = 0, FormBorderStyle = FormBorderStyle.None };
+                formDueñoL.Show();
+                OpenFileDialog ofd = new OpenFileDialog() { Filter = "Launcher (*.exe)|*.exe", Title = Txt.Paso2_Tit, FileName = NombreLauncher };
+                if (ofd.ShowDialog(formDueñoL) == DialogResult.OK) {
+                    rutaLauncher = ofd.FileName;
+                } else { formDueñoL.Close(); return; }
+                formDueñoL.Close();
+
+                if (Path.GetFileName(rutaLauncher).ToLower() != NombreLauncher.ToLower()) {
+                    MessageBox.Show(Txt.Err_Launch, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                    return;
+                }
+
+                RegistryKey keyWrite = Registry.CurrentUser.CreateSubKey(RegKeyPath);
+                keyWrite.SetValue("RutaData", rutaData);
+                keyWrite.SetValue("RutaLauncher", rutaLauncher);
+                keyWrite.SetValue("Idioma", idiomaSeleccionado);
+                keyWrite.Close();
+
+                try {
+                    CrearAccesoDirecto(escritorioPath, Application.ExecutablePath, "-modojuego", Txt.Lnk_Desc, rutaLauncher);
+                    MessageBox.Show(Txt.Lnk_Exito, Txt.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                } catch { }
+            }
+
+            
+            todasLasRutas.Clear();
+            todasLasRutas.Add(rutaData);
+            try { 
+                todasLasRutas.AddRange(Directory.GetDirectories(rutaData, "*", SearchOption.AllDirectories)); 
+            } catch { }
+
+
+//parte 10            
+            
+            if (File.Exists(rutaLauncher)) {
+                Process.Start(rutaLauncher);
+            } else {
+                MessageBox.Show(Txt.Err_NoLaunch, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                return;
+            }
+
+            
+            MessageBox.Show(
+                Txt.Espera_Lnch, 
+                Txt.Titulo, 
+                MessageBoxButtons.OK, 
+                MessageBoxIcon.Warning, 
+                MessageBoxDefaultButton.Button1, 
+                MessageBoxOptions.ServiceNotification
+            );
+
+
+ //parte11
+            
+            bool cambiosRealizados = false;
+            foreach (string sub in todasLasRutas)
+            {
+                string eur = Path.Combine(sub, "DataCenter_Final_EUR.dat");
+                string origen = Path.Combine(sub, archivoTraduccionOrigen);
+                try {
+                    if (File.Exists(eur)) File.Delete(eur);
+                    if (File.Exists(origen)) {
+                        File.Copy(origen, eur, true);
+                        cambiosRealizados = true;
+                    }
+                } catch {
+                    MessageBox.Show(Txt.Err_Disco, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+                    return;
+                }
+            }
+
+//parte 12
+            
+            if (cambiosRealizados) {
+                MessageBox.Show(Txt.Exito_Final, Txt.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+            } else {
+                MessageBox.Show(Txt.No_Cambios, Txt.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
+            }
+            Environment.Exit(0);
+        }
+
+        static bool EsAdministrador()
+        {
+            var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            var principal = new System.Security.Principal.WindowsPrincipal(identity);
+            return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+        }
+
+        static void RestaurarArchivosOriginales(string rutaBaseData)
+        {
+            if (!Directory.Exists(rutaBaseData)) return;
+            List<string> rutas = new List<string> { rutaBaseData };
+            try { rutas.AddRange(Directory.GetDirectories(rutaBaseData, "*", SearchOption.AllDirectories)); } catch { }
+            foreach (string sub in rutas)
+            {
+                string eur = Path.Combine(sub, "DataCenter_Final_EUR.dat");
+                string bak = Path.Combine(sub, "DataCenter_Final_EUR.bak");
+                if (File.Exists(bak)) {
+                    File.Copy(bak, eur, true);
+                    File.Delete(bak);
+                }
+            }
+        }
+
+        static void CrearAccesoDirecto(string pathLnk, string target, string args, string desc, string iconPath)
+        {
+            Type t = Type.GetTypeFromCLSID(new Guid("72C24DD5-D70A-438B-8A42-98424B88AFB8"));
+            dynamic shell = Activator.CreateInstance(t);
+            var lnk = shell.CreateShortcut(pathLnk);
+            lnk.TargetPath = target;
+            lnk.Arguments = args;
+            lnk.Description = desc;
+            lnk.WorkingDirectory = Path.GetDirectoryName(target);
+            if (File.Exists(iconPath)) lnk.IconLocation = iconPath + ",0";
+            lnk.Save();
+        }
+    }
+}

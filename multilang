@@ -1,5 +1,5 @@
 // ==============================================================================
-
+// Compilar este script usando csc.exe
 using System;
 using System.IO;
 using System.Diagnostics;
